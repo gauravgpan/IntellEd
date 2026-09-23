@@ -17,7 +17,7 @@ flowchart LR
   end
   subgraph Core["Must-have modules"]
     ON["Onboarding<br/>Tutor, School, Student records"]
-    CL["Class and Scheduling"]
+    CL["Class view and Scheduling"]
     CU["Curriculum<br/>Lesson schema, Handouts"]
     PR["Performance recording"]
     AS["Assessments<br/>Cognitive Snapshot, Paper uploads"]
@@ -56,6 +56,7 @@ Key design points:
 - `STUDENT` holds only a pseudonymous token. All PII lives in `STUDENT_IDENTITY`, which also carries the school's own student ID (the school ID to unique ID mapping).
 - Tutors reach schools through `TUTOR_ASSIGNMENT` (many-to-many, via class).
 - A six-month re-assessment is a new `CSS_ASSESSMENT` row with `cycle_no + 1`.
+- The class view is a derived read model. Its only new table is `CLASS_LESSON_PLAN`, the ordered lessons planned for a class. Handout progress is computed from that plan, the class roster and `SUBMISSION` rows.
 
 ```mermaid
 erDiagram
@@ -82,6 +83,8 @@ erDiagram
   STUDENT ||--o{ CSS_ASSESSMENT : "takes"
   CSS_ASSESSMENT ||--|{ CSS_DOMAIN_SCORE : "scores"
   SESSION ||--o{ REMINDER : "triggers"
+  SCHOOL_CLASS ||--o{ CLASS_LESSON_PLAN : "plans"
+  LESSON ||--o{ CLASS_LESSON_PLAN : "scheduled as"
 
   USER {
     uuid id PK
@@ -230,6 +233,12 @@ erDiagram
     float raw_score
     string band_label
   }
+  CLASS_LESSON_PLAN {
+    uuid id PK
+    uuid class_id FK
+    uuid lesson_id FK
+    int seq_no
+  }
   REMINDER {
     uuid id PK
     uuid session_id FK
@@ -339,7 +348,55 @@ sequenceDiagram
 
 ---
 
-## 6. Sequence: Cognitive Skill Snapshot (tutor-run)
+## 6. Class view
+
+A tutor reaches a class from the schedule (tap a session) or by searching, limited to classes they are assigned to. The view shows strength, the roster, and handout progress.
+
+**Definition:** a handout is done for a student when that student has submitted the assignment. For the class, a handout is Done when every enrolled student has submitted. *(Counting only Confirmed submissions is proposed; uploads still in review show as "in review".)*
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor TU as Tutor
+  participant APP as App
+  participant DB as Database
+  alt From schedule
+    TU->>APP: Tap a session on the schedule
+    APP->>DB: Resolve class of session
+  else From search
+    TU->>APP: Search class by school, grade or section
+    APP->>DB: Query classes limited to this tutor
+  end
+  APP->>DB: Check tutor is assigned to the class
+  APP->>DB: Count active students, load roster
+  APP->>DB: Load class lesson plan in order
+  APP->>DB: Count Confirmed submissions per handout
+  APP-->>TU: Class view with strength, roster and handout progress
+  opt Open a student
+    TU->>APP: Tap student
+    APP-->>TU: Notes, attendance, submissions, latest snapshot
+  end
+```
+
+### Handout status within a class (derived, not stored)
+
+```mermaid
+stateDiagram-v2
+  [*] --> ToDo
+  ToDo --> InProgress : first submission confirmed
+  InProgress --> Done : all enrolled students submitted
+```
+
+Class view layout:
+
+- **Header:** school, grade and section, strength, assigned tutor(s), next session.
+- **Roster:** each student with handouts submitted out of planned so far.
+- **Handouts:** Done, In progress (for example 22 of 30 submitted), To do, in plan order.
+- **Sessions:** upcoming and past.
+
+---
+
+## 7. Sequence: Cognitive Skill Snapshot (tutor-run)
 
 ```mermaid
 sequenceDiagram
@@ -365,7 +422,7 @@ sequenceDiagram
 
 ---
 
-## 7. Sequence: paper assignment to database entries
+## 8. Sequence: paper assignment to database entries
 
 ```mermaid
 sequenceDiagram
@@ -409,7 +466,7 @@ stateDiagram-v2
 
 ---
 
-## 8. Role permissions *(proposed)*
+## 9. Role permissions *(proposed)*
 
 | Capability | Founder | Admin | Tutor |
 |---|---|---|---|
@@ -419,6 +476,8 @@ stateDiagram-v2
 | Author lessons and handouts | Yes | Yes | No |
 | Download handouts | Yes | Yes | Assigned classes |
 | Create and update sessions | Yes | Yes | Own sessions |
+| View class (strength, roster, handout progress) | Yes | Yes | Assigned classes |
+| Set a class lesson sequence | Yes | Yes | No |
 | Attendance and performance notes | View | View | Assigned classes |
 | Run snapshot, upload assignments | View | View | Assigned students |
 | Individual reports | Yes | Yes | Assigned students |
@@ -426,7 +485,7 @@ stateDiagram-v2
 
 ---
 
-## 9. Open decisions
+## 10. Open decisions
 
 1. **Approval authority:** can Admin approve a tutor to Active, or Founder only?
 2. **No rejection path:** the doc's tutor lifecycle has no state for an applicant who fails verification.
@@ -434,7 +493,11 @@ stateDiagram-v2
 4. **Extraction review:** I recommend tutor confirmation before anything is committed, since handwriting and board diagrams from children will extract with errors. Also decide how the student is identified: tutor tags at upload, or a per-student code printed on the handout.
 5. **Reminders:** do they go to tutors only, given there are no parent accounts?
 6. **School Active trigger:** what moves a school from Onboarded to Active?
+7. **Lesson sequence owner:** I assumed Admin sets each class's sequence and tutors cannot edit it. Say if tutors should reorder.
+8. **Absent students:** if one student never submits, the class can never reach Done. I recommend a per-student Waived state on a handout, set by the tutor.
+9. **What counts as submitted:** I assumed Confirmed only. Counting uploads still in review would inflate progress before the tutor has checked the extraction.
+10. **Mid-year roster changes:** the Done denominator should use students enrolled at the time. Late joiners need a rule for past handouts.
 
-## 10. Deliberately deferred (Good and May have)
+## 11. Deliberately deferred (Good and May have)
 
 Self-service tutor application, bulk CSV student import, state-change notifications, parent-side views, assessment history comparison, resume of interrupted assessments, norm referencing, configurable item banks, trend charts and auto-generated digests. The schema above leaves room for these without migration: the identity split, `cycle_no`, and `HANDOUT.kind`.
