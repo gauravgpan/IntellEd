@@ -12,6 +12,11 @@ const sidebars = {
       ],
     },
     'comparison',
+    {
+      type: 'category',
+      label: 'MVP',
+      items: ['mvp/technical-design'],
+    },
   ],
 };
 
