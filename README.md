@@ -36,4 +36,13 @@ npm run build     # static build, output in ./build
 - `docs/intro.md` — context and the three-option overview
 - `docs/workflows/*.md` — one Mermaid diagram per option
 - `docs/comparison.md` — pros/cons/effort table
+- `docs/mvp/technical-design.md` — MVP technical design (data model, lifecycle
+  and sequence diagrams, class view, open decisions)
 - Edit any `.md` file and re-push to update the live site.
+
+## App code
+
+`app/` holds a running MVP skeleton (Django + MySQL backend, React frontend)
+built against `docs/mvp/technical-design.md`. See [`app/README.md`](app/README.md)
+for setup. It's independent of this Docusaurus site — nothing in `app/` is
+built or deployed by `.github/workflows/deploy.yml`.

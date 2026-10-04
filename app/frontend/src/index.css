@@ -1,0 +1,264 @@
+/*
+  Deliberately plain: this is a thin functional skeleton, not a design
+  pass. See the frontend-design guidance before putting real visual work
+  into these screens.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+a {
+  color: #1d4ed8;
+}
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.page-loading {
+  padding: 40px;
+  text-align: center;
+}
+
+.muted {
+  color: #666;
+}
+
+h1 {
+  margin-bottom: 4px;
+}
+
+section {
+  margin-top: 32px;
+}
+
+/* Nav */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 16px;
+  background: #111827;
+  color: white;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.navbar-links a {
+  color: #d1d5db;
+  text-decoration: none;
+}
+
+.navbar-links a.active {
+  color: white;
+  font-weight: 600;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.navbar-user button {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Forms */
+form label {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+form input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 16px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+button.link-button {
+  background: none;
+  color: #1d4ed8;
+  padding: 4px 0;
+}
+
+.form-error {
+  color: #b91c1c;
+  margin-top: 12px;
+}
+
+.login-page {
+  max-width: 360px;
+  margin: 80px auto;
+  padding: 0 16px;
+}
+
+.login-subtitle {
+  color: #666;
+  margin-top: -8px;
+}
+
+/* Lists and tables */
+.session-list {
+  list-style: none;
+  padding: 0;
+}
+
+.session-list li a {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.button-link {
+  display: inline-block;
+  margin-top: 16px;
+  text-decoration: none;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 12px 0 24px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-to_do {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.badge-in_progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-done {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+}
+
+.note-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Submission review */
+.review-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.entry-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.entry-row input {
+  flex: 1;
+  padding: 4px 8px;
+}
+
+.review-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.inline-form input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

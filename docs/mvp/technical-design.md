@@ -198,6 +198,8 @@ erDiagram
     datetime uploaded_at
     uuid reviewed_by FK
     datetime reviewed_at
+    uuid waived_by FK
+    string waived_reason
   }
   SUBMISSION_ENTRY {
     uuid id PK
@@ -352,7 +354,7 @@ sequenceDiagram
 
 A tutor reaches a class from the schedule (tap a session) or by searching, limited to classes they are assigned to. The view shows strength, the roster, and handout progress.
 
-**Definition:** a handout is done for a student when that student has submitted the assignment. For the class, a handout is Done when every enrolled student has submitted. *(Counting only Confirmed submissions is proposed; uploads still in review show as "in review".)*
+**Definition:** a handout is done for a student when that student has submitted the assignment. A tutor can instead mark a student Waived on a handout (absence, exemption), with a short reason. For the class, a handout is Done when every enrolled student is either Confirmed or Waived. *(Counting only Confirmed submissions toward "submitted" is proposed; uploads still in review show as "in review".)*
 
 ```mermaid
 sequenceDiagram
@@ -391,7 +393,7 @@ Class view layout:
 
 - **Header:** school, grade and section, strength, assigned tutor(s), next session.
 - **Roster:** each student with handouts submitted out of planned so far.
-- **Handouts:** Done, In progress (for example 22 of 30 submitted), To do, in plan order.
+- **Handouts:** Done, In progress (for example 22 of 30 submitted, 1 waived), To do, in plan order.
 - **Sessions:** upcoming and past.
 
 ---
@@ -462,6 +464,9 @@ stateDiagram-v2
   Failed --> Uploaded : re-upload
   NeedsReview --> Confirmed : tutor confirms
   Confirmed --> [*]
+  [*] --> Waived : tutor marks waived, no upload
+  Uploaded --> Waived : tutor marks waived
+  Waived --> [*]
 ```
 
 ---
@@ -494,9 +499,9 @@ stateDiagram-v2
 5. **Reminders:** do they go to tutors only, given there are no parent accounts?
 6. **School Active trigger:** what moves a school from Onboarded to Active?
 7. **Lesson sequence owner:** I assumed Admin sets each class's sequence and tutors cannot edit it. Say if tutors should reorder.
-8. **Absent students:** if one student never submits, the class can never reach Done. I recommend a per-student Waived state on a handout, set by the tutor.
-9. **What counts as submitted:** I assumed Confirmed only. Counting uploads still in review would inflate progress before the tutor has checked the extraction.
-10. **Mid-year roster changes:** the Done denominator should use students enrolled at the time. Late joiners need a rule for past handouts.
+8. **What counts as submitted:** I assumed Confirmed only. Counting uploads still in review would inflate progress before the tutor has checked the extraction.
+9. **Mid-year roster changes:** the Done denominator should use students enrolled at the time. Late joiners need a rule for past handouts.
+10. **Waive authority and audit:** can any tutor on the class waive, or only the lead tutor? Waives should probably show on the class view distinctly from Confirmed, not just vanish into the Done count.
 
 ## 11. Deliberately deferred (Good and May have)
 
