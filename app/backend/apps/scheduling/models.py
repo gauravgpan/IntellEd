@@ -40,6 +40,15 @@ class Session(models.Model):
             # Onboarded -> Active trigger (design doc section 3).
             self.school_class.school.mark_active_on_first_session()
 
+        # Register (create) or re-register (refresh timing on update) this
+        # session's reminder — design doc section 5's "Register reminders" /
+        # "Re-register reminders". Local import avoids a circular import at
+        # module load (services.py imports Reminder from this module).
+        if self.status == self.STATUS_SCHEDULED:
+            from .services import register_reminder
+
+            register_reminder(self)
+
 
 class Attendance(models.Model):
     """

@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django_q.tasks import async_task
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,7 +8,6 @@ from apps.schools.models import TutorAssignment
 from apps.users.models import User
 from apps.users.permissions import IsFounderAdminOrTutor
 
-from . import services
 from .models import Submission, SubmissionEntry
 from .serializers import SubmissionEntrySerializer, SubmissionSerializer
 
@@ -34,7 +34,10 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         submission = serializer.save(uploaded_by=self.request.user, uploaded_at=timezone.now())
-        services.run_extraction(submission)
+        # Queued, not called inline: see apps/submissions/services.py's
+        # docstring on why extraction shouldn't run on the request thread.
+        # Requires the Django-Q2 worker to be running (`manage.py qcluster`).
+        async_task("apps.submissions.services.run_extraction", submission.id)
 
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
@@ -85,7 +88,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="retry-extraction")
     def retry_extraction(self, request, pk=None):
         """Re-upload / Failed -> Uploaded -> re-run extraction (design doc
-        section 8's 'Extraction fails' branch)."""
+        section 8's 'Extraction fails' branch). Queued, same as on upload —
+        the response reflects the pre-retry state; poll the submission to
+        see the result once the worker picks it up."""
         submission = self.get_object()
-        services.run_extraction(submission)
+        async_task("apps.submissions.services.run_extraction", submission.id)
         return Response(SubmissionSerializer(submission).data)

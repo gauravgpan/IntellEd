@@ -5,3 +5,8 @@ django-cors-headers==4.6.0
 PyMySQL==1.1.1
 python-dotenv==1.0.1
 gunicorn==23.0.0
+# Version range, not a pin: this sandbox has no PyPI access to verify the
+# latest release against. `pip install -U django-q2` and re-pin once you
+# can check. Uses the ORM broker (ships with MySQL support via PyMySQL
+# above) — no Redis needed. See config/settings.py's Q_CLUSTER.
+django-q2>=1.6,<2.0

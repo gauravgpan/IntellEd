@@ -6,7 +6,8 @@ roles, the data model, and empty-but-wired endpoints/screens for each
 module. Nothing here is feature-complete — see "What's not here yet" below.
 
 Stack: LAMP + Python — Apache (prod) / Django + Django REST Framework / MySQL
-/ React (Vite).
+/ React (Vite), with Django-Q2 for background/scheduled work (its ORM broker
+runs off the same MySQL database — no Redis needed).
 
 ## Layout
 
@@ -32,14 +33,26 @@ pip install -r requirements.txt
 # Fastest path, no MySQL needed: set USE_SQLITE=1 in .env
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py setup_schedules   # registers the reminder-dispatch job (idempotent)
 python manage.py runserver
 ```
 
-Or with Docker (MySQL included):
+In a second terminal, start the Django-Q2 worker — without it, uploaded
+submissions never leave "Uploaded" and reminders never send, since both
+now run as background jobs rather than inline in a request:
+
+```bash
+cd app/backend
+python manage.py qcluster
+```
+
+Or with Docker (MySQL + backend + the qcluster worker, all included):
 
 ```bash
 cd app
 docker compose up --build
+# then once, in another terminal:
+docker compose exec backend python manage.py setup_schedules
 ```
 
 **Frontend**
@@ -65,7 +78,11 @@ permissions (Founder/Admin/Tutor), and matching React screens:
 - Schools, classes, tutor assignments (many-to-many)
 - Students (pseudonymous token + separate PII table), subscriptions
 - Curriculum: lessons, handouts, per-class lesson plan
-- Scheduling: sessions, attendance, performance notes, reminders
+- Scheduling: sessions, attendance, performance notes, and **system-triggered
+  reminders** — scheduling or rescheduling a session registers its reminder
+  (`Session.save()`), and a Django-Q2 job (`apps/scheduling/tasks.py`,
+  `python manage.py setup_schedules`) checks every 15 minutes for ones due to
+  send — design doc §5, §10 open decision 5
 - **Class view**: strength, roster, handout progress (Done / In progress /
   To do), reachable from the schedule or by search — design doc §6
 - Submissions: upload → review/confirm → or waive, design doc §7–§8
@@ -80,12 +97,16 @@ change.
 
 ## What's not here yet
 
-- **Extraction worker** (`apps/submissions/services.py`): a stub. No
-  OCR/vision model is wired up — this is the seam where one plugs in.
+- **Extraction worker** (`apps/submissions/services.py`): the content is a
+  stub — no OCR/vision model wired up — but the plumbing is real: it runs as
+  a queued Django-Q2 task, not inline in the request. That's the seam where
+  a real pipeline plugs in.
+- **Reminder delivery** (`apps/scheduling/services.py.send_reminder`): same
+  shape — the job that finds due reminders and calls this runs for real
+  (every 15 minutes, via Django-Q2), it's the actual send (email/SMS/push)
+  that's stubbed to a log line.
 - **OTP delivery** (`apps/users/services.py`): logs the code instead of
   sending email/SMS. Swap in a real provider.
-- **Reminders**: rows are modeled; nothing actually sends them yet (no
-  scheduler/queue wired up).
 - Tests, CI, and the Good/May-have backlog (design doc §11) — deliberately
   deferred, same as the design doc.
 

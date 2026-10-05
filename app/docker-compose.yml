@@ -33,5 +33,22 @@ services:
     volumes:
       - ./backend:/app
 
+  # Django-Q2 worker + scheduler. Runs submission extraction (queued from
+  # apps/submissions/views.py) and the periodic reminder dispatch job
+  # (apps/scheduling/tasks.py) — see Q_CLUSTER in config/settings.py.
+  # Uses the same MySQL database as its broker, so no Redis service here.
+  qcluster:
+    build: ./backend
+    restart: unless-stopped
+    command: python manage.py qcluster
+    env_file: ./backend/.env
+    environment:
+      DB_HOST: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
 volumes:
   mysql_data:

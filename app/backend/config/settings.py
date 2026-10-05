@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_filters",
     "corsheaders",
+    "django_q",
     "apps.users",
     "apps.schools",
     "apps.students",
@@ -133,12 +134,36 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173"
 ).split(",")
 
+# --- Background tasks (Django-Q2) --------------------------------------
+# Chosen over Celery for this MVP's scale: the ORM broker runs off the same
+# MySQL database, so there's no extra service (no Redis) to operate. Moves
+# submission extraction off the request thread (apps/submissions/services.py)
+# and runs the reminder dispatch job on a schedule (apps/scheduling/tasks.py,
+# registered by the setup_schedules management command). Run the worker
+# alongside the web server with `python manage.py qcluster`.
+Q_CLUSTER = {
+    "name": "thinkturf",
+    "workers": 2,
+    "timeout": 90,
+    "retry": 120,
+    "queue_limit": 50,
+    "bulk": 10,
+    "orm": "default",
+}
+
 # --- OTP -----------------------------------------------------------------
 # No SMS/email provider wired up yet: OTP codes are logged to the console
 # (see apps/users/services.py). Swap send_otp() for a real provider when
 # one is chosen.
 OTP_CODE_LENGTH = 6
 OTP_TTL_SECONDS = 10 * 60
+
+# --- Reminders -------------------------------------------------------------
+# How long before a session its reminder fires (design doc section 5:
+# "Reminder before session"). Registered at session create/update
+# (Session.save(), apps/scheduling/services.py.register_reminder); actually
+# sent by the periodic apps/scheduling/tasks.py.dispatch_due_reminders job.
+REMINDER_LEAD_MINUTES = int(os.environ.get("REMINDER_LEAD_MINUTES", "60"))
 
 # --- Feature flags for open design decisions ---------------------------------
 # Each references the numbered "Open decisions" section of the technical
