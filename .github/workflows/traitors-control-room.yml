@@ -1,0 +1,30 @@
+name: Traitors control room tests
+
+on:
+  push:
+    branches: [traitors-streamlit]
+    paths:
+      - "traitors-control-room/**"
+      - ".github/workflows/traitors-control-room.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: traitors-control-room
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Streamlit
+        run: pip install -r requirements.txt
+      - name: Game logic tests
+        run: python -m unittest discover -s tests -p "test_core.py" -v
+      - name: App tests
+        run: python -m unittest discover -s tests -p "test_app.py" -v
